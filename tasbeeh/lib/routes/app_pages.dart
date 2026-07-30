@@ -1,9 +1,14 @@
 import 'package:get/get.dart';
 import 'package:tasbeeh/features/auth/bindings/auth_bindings.dart';
 import 'package:tasbeeh/features/auth/screens/forget_password.dart';
+import 'package:tasbeeh/features/custom_dhikr/bindings/custom_dhikr_binding.dart';
+import 'package:tasbeeh/features/custom_dhikr/screens/custom_dhikr_form_screen.dart';
+import 'package:tasbeeh/features/custom_dhikr/screens/custom_dhikr_list_screen.dart';
 import 'package:tasbeeh/features/dhikr_library/bindings/dhikr_library_binding.dart';
 import 'package:tasbeeh/features/dhikr_library/screens/dhikr_detail_screen.dart';
 import 'package:tasbeeh/features/dhikr_library/screens/dhikr_library_screen.dart';
+import 'package:tasbeeh/features/history/bindings/history_binding.dart';
+import 'package:tasbeeh/features/history/screens/history_list_screen.dart';
 import 'package:tasbeeh/features/home/bindings/home_bindings.dart';
 import 'package:tasbeeh/features/home/screens/home_screen.dart';
 import 'package:tasbeeh/features/tasbeeh/bindings/tasbeeh_binding.dart';
@@ -49,6 +54,21 @@ class AppPages {
       name: Routes.tasbeeh,
       page: () => const TasbeehCounterScreen(),
       binding: TasbeehBinding(),
+    ),
+    GetPage(
+      name: Routes.customDhikr,
+      page: () => const CustomDhikrListScreen(),
+      binding: CustomDhikrBinding(),
+    ),
+    GetPage(
+      name: Routes.customDhikrForm,
+      page: () => const CustomDhikrFormScreen(),
+      // No binding needed; it's part of the same module
+    ),
+    GetPage(
+      name: Routes.history,
+      page: () => const HistoryListScreen(),
+      binding: HistoryBinding(),
     ),
   ];
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tasbeeh/features/home/controller/home_controller.dart';
+import 'package:tasbeeh/routes/app_routes.dart';
 
 class QuickActions extends StatelessWidget {
   const QuickActions({super.key});
@@ -18,11 +19,11 @@ class QuickActions extends StatelessWidget {
       },
       {'icon': Icons.explore, 'label': 'Qibla', 'route': '/qibla'},
       {
-        'icon': Icons.add_circle_outline,
+        'icon': Icons.bookmark_add_outlined,
         'label': 'Custom Dhikr',
-        'route': '/custom-dhikr',
+        'route': Routes.customDhikr,
       },
-      {'icon': Icons.history, 'label': 'History', 'route': '/history'},
+      {'icon': Icons.history, 'label': 'History', 'route': Routes.history},
     ];
 
     return GridView.count(

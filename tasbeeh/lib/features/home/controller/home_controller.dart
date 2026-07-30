@@ -1,9 +1,9 @@
 import 'package:get/get.dart';
 import 'package:tasbeeh/features/auth/controller/auth_controller.dart';
 import 'package:tasbeeh/features/home/repository/home_repository.dart';
-import 'package:tasbeeh/features/tasbeeh/controllers/tasbeeh_controller.dart';
-import 'package:tasbeeh/features/tasbeeh/screens/tasbeeh_resume_dialogue.dart';
 import 'package:tasbeeh/routes/app_routes.dart';
+import '../../tasbeeh/controllers/tasbeeh_controller.dart';
+import '../../tasbeeh/screens/tasbeeh_resume_dialogue.dart';
 import '../models/daily_progress_model.dart';
 import '../models/quote_model.dart';
 
@@ -31,19 +31,27 @@ class HomeController extends GetxController {
 
   void _setGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12)
+    if (hour < 12) {
       greeting.value = 'Good Morning ☀️';
-    else if (hour < 17)
+    } else if (hour < 17) {
       greeting.value = 'Good Afternoon 🌤️';
-    else
+    } else {
       greeting.value = 'Good Evening 🌙';
+    }
   }
 
   void _setUserName() {
+    // Safe: if user is null, fallback to 'Muslim'
     userName.value = authController.state.user?.name ?? 'Muslim';
   }
 
   Future<void> loadDashboardData() async {
+    // Check if user is authenticated; if not, do nothing (should not happen)
+    if (authController.state.user == null) {
+      print('⚠️ User not authenticated, dashboard data cannot be loaded.');
+      return;
+    }
+
     isLoading.value = true;
     try {
       // Load all data in parallel
@@ -55,8 +63,9 @@ class HomeController extends GetxController {
       dailyProgress.value = results[0] as DailyProgress;
       streak.value = results[1] as int;
       dailyQuote.value = results[2] as Quote;
-    } catch (e) {
-      print('Error loading dashboard: $e');
+    } catch (e, stack) {
+      print('❌ Error loading dashboard: $e');
+      print(stack);
       // Set fallback values
       dailyProgress.value = DailyProgress(
         date: DateTime.now().toIso8601String().split('T').first,
@@ -71,28 +80,36 @@ class HomeController extends GetxController {
     }
   }
 
-  // Resume last Tasbeeh – placeholder; will be implemented in Module 5
-  void resumeLastDhikr() async {
-    final tasbeehController = Get.find<TasbeehController>();
-    final activeSession = await tasbeehController.repository.getActiveSession();
-    if (activeSession != null) {
-      // Show resume dialog
-      final shouldResume = await Get.dialog<bool>(
-        TasbeehResumeDialog(
-          dhikrName: activeSession.dhikrName,
-          count: activeSession.currentCount,
-          target: activeSession.targetCount,
-        ),
-      );
-      if (shouldResume == true) {
-        Get.toNamed(Routes.tasbeeh, arguments: {'resume': true});
+  // Resume last Tasbeeh session
+  Future<void> resumeLastDhikr() async {
+    try {
+      // Ensure TasbeehController is available
+      final tasbeehController = Get.find<TasbeehController>();
+      final activeSession = await tasbeehController.repository
+          .getActiveSession();
+      if (activeSession != null) {
+        final shouldResume = await Get.dialog<bool>(
+          TasbeehResumeDialog(
+            dhikrName: activeSession.dhikrName,
+            count: activeSession.currentCount,
+            target: activeSession.targetCount,
+          ),
+        );
+        if (shouldResume == true) {
+          Get.toNamed(Routes.tasbeeh, arguments: {'resume': true});
+        }
+      } else {
+        // No active session, go to library
+        Get.toNamed(Routes.dhikrLibrary);
       }
-    } else {
-      // No active session, go to library to pick one
+    } catch (e) {
+      print('❌ Error resuming dhikr: $e');
+      // Fallback: go to library
       Get.toNamed(Routes.dhikrLibrary);
     }
   }
 
   void logout() => authController.logout();
+
   void navigateTo(String route) => Get.toNamed(route);
 }

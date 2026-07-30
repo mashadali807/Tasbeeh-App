@@ -56,16 +56,18 @@ class DhikrDetailScreen extends StatelessWidget {
               Text(dhikr.benefits!, style: const TextStyle(fontSize: 16)),
             ],
             const SizedBox(height: 24),
+            // ✅ Fixed Row – no overflow
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Recommended: ${dhikr.recommendedCount} times',
-                  style: const TextStyle(fontSize: 16),
+                Expanded(
+                  child: Text(
+                    'Recommended: ${dhikr.recommendedCount} times',
+                    style: const TextStyle(fontSize: 16),
+                  ),
                 ),
+                const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: () {
-                    // Navigate to Tasbeeh counter with this dhikr pre‑loaded
                     Get.toNamed(
                       '/tasbeeh',
                       arguments: {

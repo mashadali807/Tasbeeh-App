@@ -8,4 +8,7 @@ abstract class Routes {
   static const dhikrDetail = '/dhikr-detail';
   static const tasbeeh = '/tasbeeh';
   static const tasbeehResume = '/tasbeeh/resume';
+  static const customDhikr = '/custom-dhikr';
+  static const customDhikrForm = '/custom-dhikr-form';
+  static const history = '/history';
 }

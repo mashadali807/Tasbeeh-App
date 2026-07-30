@@ -23,12 +23,6 @@ class TasbeehCounterScreen extends GetView<TasbeehController> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddCustomDhikrDialog(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Custom Dhikr'),
-        backgroundColor: Theme.of(context).primaryColor,
-      ),
       body: Stack(
         children: [
           TasbeehBackground(
@@ -47,14 +41,18 @@ class TasbeehCounterScreen extends GetView<TasbeehController> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Obx(() => Text(
-                            controller.currentDhikrName.value,
-                            style: Theme.of(context).textTheme.titleLarge,
-                          )),
-                          Obx(() => Text(
-                            'Target: ${controller.targetCount.value}',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          )),
+                          Obx(
+                            () => Text(
+                              controller.currentDhikrName.value,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ),
+                          Obx(
+                            () => Text(
+                              'Target: ${controller.targetCount.value}',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 32),
@@ -64,13 +62,17 @@ class TasbeehCounterScreen extends GetView<TasbeehController> {
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
-                              Obx(() => CircularProgress(
-                                progress: controller.progress.value,
-                                size: 220,
-                              )),
-                              Obx(() => AnimatedCounter(
-                                count: controller.count.value,
-                              )),
+                              Obx(
+                                () => CircularProgress(
+                                  progress: controller.progress.value,
+                                  size: 220,
+                                ),
+                              ),
+                              Obx(
+                                () => AnimatedCounter(
+                                  count: controller.count.value,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -80,10 +82,7 @@ class TasbeehCounterScreen extends GetView<TasbeehController> {
                       const SizedBox(height: 8),
                       Text(
                         'Tap anywhere to count',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                     ],
                   ),
@@ -139,7 +138,7 @@ class TasbeehCounterScreen extends GetView<TasbeehController> {
       builder: (context) => AlertDialog(
         title: const Text('Cancel Session?'),
         content: const Text(
-          'Your progress will be saved. You can resume it later from the home screen.',
+          'Your progress will be discarded. Are you sure you want to cancel?',
         ),
         actions: [
           TextButton(
@@ -149,61 +148,10 @@ class TasbeehCounterScreen extends GetView<TasbeehController> {
           ElevatedButton(
             onPressed: () {
               Get.back();
-              controller.cancelSession(); // ✅ public method
+              controller.cancelSession();
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAddCustomDhikrDialog(BuildContext context) {
-    final TextEditingController nameController = TextEditingController();
-    final TextEditingController targetController = TextEditingController(text: '33');
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Custom Dhikr'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Dhikr Name',
-                hintText: 'e.g., SubhanAllah',
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: targetController,
-              decoration: const InputDecoration(
-                labelText: 'Target Count',
-                hintText: '33',
-              ),
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final name = nameController.text.trim();
-              final target = int.tryParse(targetController.text.trim()) ?? 33;
-              if (name.isNotEmpty) {
-                // ✅ Use the public method from the controller
-                controller.addCustomDhikr(name, target);
-                Get.back();
-              }
-            },
-            child: const Text('Add'),
+            child: const Text('Cancel & Discard'),
           ),
         ],
       ),
