@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "813846499004",
+    "project_id": "voltmask-90c3a",
+    "storage_bucket": "voltmask-90c3a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:813846499004:android:c1bf1cf71b76e7bca98ab9",
+        "android_client_info": {
+          "package_name": "com.example.tasbeeh"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8sU3htjSkOhW4q0SW2afiaSTu2paORZI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:813846499004:android:3540db792b7f58b3a98ab9",
+        "android_client_info": {
+          "package_name": "com.example.volt_mask_web"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8sU3htjSkOhW4q0SW2afiaSTu2paORZI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
