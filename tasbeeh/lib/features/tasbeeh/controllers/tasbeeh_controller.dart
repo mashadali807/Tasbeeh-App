@@ -6,12 +6,9 @@ import '../models/tasbeeh_session.dart';
 import '../models/tasbeeh_step.dart';
 import '../repositories/tasbeeh_repository.dart';
 
-/// Controller for the Smart Tasbeeh Counter.
-/// Manages a multi‑step counting session (e.g., SubhanAllah → Alhamdulillah → Allahu Akbar).
-/// Handles persistence, haptics, sound, and auto‑advance.
 class TasbeehController extends GetxController {
   final TasbeehRepository repository;
-  final HistoryRepository historyRepository; // ✅ injected
+  final HistoryRepository historyRepository;
 
   // ---------- Reactive State ----------
   final Rx<TasbeehSession?> currentSession = Rx<TasbeehSession?>(null);
@@ -24,13 +21,13 @@ class TasbeehController extends GetxController {
   final RxBool showCelebration = false.obs;
   final RxBool allStepsCompleted = false.obs;
 
-  // Settings (loaded from local storage later)
   final RxBool vibrationEnabled = true.obs;
   final RxBool soundEnabled = true.obs;
 
   // ---------- Internal State ----------
   Timer? _autoSaveTimer;
   bool _hasUnsavedChanges = false;
+  bool _isSessionSaved = false; // prevent duplicate finalisation
 
   TasbeehController({
     required this.repository,
@@ -54,12 +51,8 @@ class TasbeehController extends GetxController {
     super.onClose();
   }
 
-  // ---------- Initialisation ----------
-  void _loadSettings() {
-    // TODO: Load from SettingsService when available
-  }
+  void _loadSettings() {}
 
-  /// Decide what to do when the screen opens.
   void _handleInitialNavigation() {
     final args = Get.arguments;
     if (args != null && args is Map<String, dynamic>) {
@@ -79,7 +72,6 @@ class TasbeehController extends GetxController {
     }
   }
 
-  /// Start a single‑step session (when coming from the library).
   void _startSingleDhikr({
     required String dhikrId,
     required String dhikrName,
@@ -97,19 +89,18 @@ class TasbeehController extends GetxController {
     _setSession(session);
   }
 
-  /// Start the default post‑prayer tasbeeh: SubhanAllah (33) → Alhamdulillah (33) → Allahu Akbar (34).
   void _startPostPrayerTasbeeh() {
     final steps = [
+      TasbeehStep(
+        id: 'allahuakbar',
+        dhikrName: 'Allahu Akbar',
+        targetCount: 34,
+      ),
       TasbeehStep(id: 'subhanallah', dhikrName: 'SubhanAllah', targetCount: 33),
       TasbeehStep(
         id: 'alhamdulillah',
         dhikrName: 'Alhamdulillah',
         targetCount: 33,
-      ),
-      TasbeehStep(
-        id: 'allahuakbar',
-        dhikrName: 'Allahu Akbar',
-        targetCount: 34,
       ),
     ];
     final session = TasbeehSession(
@@ -121,7 +112,6 @@ class TasbeehController extends GetxController {
     _setSession(session);
   }
 
-  /// Resume the most recent active session, or start the default if none exists.
   Future<void> _startDefaultOrResume() async {
     final active = await repository.getActiveSession();
     if (active != null) {
@@ -134,7 +124,6 @@ class TasbeehController extends GetxController {
     }
   }
 
-  /// Explicitly resume an active session (used when the route passes `resume: true`).
   Future<void> _resumeActiveSession() async {
     final session = await repository.getActiveSession();
     if (session != null) {
@@ -147,7 +136,6 @@ class TasbeehController extends GetxController {
     }
   }
 
-  /// Set the session and update UI.
   void _setSession(TasbeehSession session) {
     currentSession.value = session;
     _updateUI(session);
@@ -155,7 +143,6 @@ class TasbeehController extends GetxController {
     isCounting.value = true;
   }
 
-  // ---------- UI Update ----------
   void _updateUI(TasbeehSession session) {
     count.value = session.currentCount;
     currentDhikrName.value = session.dhikrName;
@@ -165,22 +152,17 @@ class TasbeehController extends GetxController {
     allStepsCompleted.value = session.allStepsCompleted;
 
     if (session.isTargetReached && !showCelebration.value) {
-      _handleStepCompletion();
+      isCounting.value = false;
+      showCelebration.value = true;
     }
   }
 
   // ---------- Core Actions ----------
-  /// Increment the count.
   Future<void> incrementCount() async {
-    if (currentSession.value == null) return;
+    if (currentSession.value == null || !isCounting.value) return;
 
-    // Feedback
-    if (vibrationEnabled.value) {
-      await repository.vibrate();
-    }
-    if (soundEnabled.value) {
-      await repository.playClickSound();
-    }
+    if (vibrationEnabled.value) await repository.vibrate();
+    if (soundEnabled.value) await repository.playClickSound();
 
     final session = currentSession.value!;
     final newCount = session.currentCount + 1;
@@ -195,13 +177,11 @@ class TasbeehController extends GetxController {
     _updateUI(updatedSession);
     _hasUnsavedChanges = true;
 
-    // Save immediately if target reached (auto‑save will also kick in)
     if (reachedTarget) {
       await _saveCurrentSession();
     }
   }
 
-  /// Undo the last increment.
   Future<void> undoCount() async {
     if (currentSession.value == null) return;
     final session = currentSession.value!;
@@ -211,14 +191,13 @@ class TasbeehController extends GetxController {
       currentCount: session.currentCount - 1,
       lastUpdatedAt: DateTime.now(),
     );
-
     currentSession.value = updatedSession;
     _updateUI(updatedSession);
     _hasUnsavedChanges = true;
     showCelebration.value = false;
+    isCounting.value = true;
   }
 
-  /// Reset the count for the current step.
   Future<void> resetCount() async {
     if (currentSession.value == null) return;
     final session = currentSession.value!;
@@ -230,85 +209,96 @@ class TasbeehController extends GetxController {
     _updateUI(updatedSession);
     _hasUnsavedChanges = true;
     showCelebration.value = false;
+    isCounting.value = true;
   }
 
-  /// Cancel the entire session – discard progress and return to Home.
+  // ---------- Public Methods for Celebration Overlay ----------
+  void saveAndFinish() {
+    if (currentSession.value == null) return;
+    final session = currentSession.value!;
+    final currentStep = session.currentStep;
+
+    if (currentStep != null && session.isTargetReached) {
+      // Save this step to history
+      _saveHistoryForStep(session, currentStep);
+
+      // Mark step as completed
+      final updatedSteps = List<TasbeehStep>.from(session.steps);
+      updatedSteps[session.currentStepIndex] = currentStep.copyWith(
+        isCompleted: true,
+      );
+      final updatedSession = session.copyWith(steps: updatedSteps);
+      currentSession.value = updatedSession;
+      _saveCurrentSession();
+
+      if (updatedSession.allStepsCompleted) {
+        // All steps done – finalise
+        _completeSession();
+      } else {
+        // Advance to next step
+        final nextSession = updatedSession.advanceStep();
+        currentSession.value = nextSession;
+        _updateUI(nextSession);
+        _saveCurrentSession();
+        showCelebration.value = false;
+        isCounting.value = true;
+      }
+    } else {
+      // Single-step or already completed
+      _completeSession();
+    }
+  }
+
+  void discardAndCancel() {
+    cancelSession();
+  }
+
+  // ---------- Session Completion (no extra history) ----------
+  void _completeSession() {
+    final session = currentSession.value;
+    if (session == null) return;
+
+    if (_isSessionSaved) return;
+    _isSessionSaved = true;
+
+    // Mark as completed
+    final updatedSession = session.copyWith(
+      isCompleted: true,
+      lastUpdatedAt: DateTime.now(),
+    );
+    currentSession.value = updatedSession;
+    repository.saveSession(updatedSession);
+
+    // No extra history entry – each step was saved individually
+
+    _autoSaveTimer?.cancel();
+    isCounting.value = false;
+    showCelebration.value = false;
+    Get.offAllNamed('/home');
+  }
+
+  // ---------- Cancel (Discard) ----------
   Future<void> cancelSession() async {
     final session = currentSession.value;
     if (session != null) {
-      // Delete the session completely (don't save)
       await repository.deleteSession(session.id);
     }
     _autoSaveTimer?.cancel();
     isCounting.value = false;
-    currentSession.value = null; // clear local reference
+    currentSession.value = null;
+    showCelebration.value = false;
     Get.offAllNamed('/home');
   }
 
-  /// Add a custom Dhikr step to the current session.
-  void addCustomDhikr(String name, int target) {
-    final session = currentSession.value;
-    if (session == null) return;
-
-    final newStep = TasbeehStep(
-      id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
-      dhikrName: name,
-      targetCount: target,
-    );
-
-    final updatedSteps = List<TasbeehStep>.from(session.steps)..add(newStep);
-    final updatedSession = session.copyWith(steps: updatedSteps);
-
-    currentSession.value = updatedSession;
-    _updateUI(updatedSession);
-    _hasUnsavedChanges = true;
-    _saveCurrentSession();
-  }
-
-  // ---------- Step Advancement ----------
-  void _handleStepCompletion() {
-    _triggerCelebration();
-    // Auto‑advance after celebration
-    Future.delayed(const Duration(seconds: 3), () {
-      if (currentSession.value != null) {
-        _advanceToNextStep();
-      }
-    });
-  }
-
-  void _advanceToNextStep() {
-    final session = currentSession.value;
-    if (session == null) return;
-
-    // Get the step that was just completed (the current step before advancing)
-    final completedStep = session.currentStep;
-    if (completedStep != null) {
-      // Save a history entry for this step
-      _saveHistoryForStep(session, completedStep);
-    }
-
-    // Advance to the next step
-    final updatedSession = session.advanceStep();
-    currentSession.value = updatedSession;
-    _updateUI(updatedSession);
-    _hasUnsavedChanges = true;
-    _saveCurrentSession();
-
-    if (updatedSession.allStepsCompleted) {
-      // Final celebration if all steps are done
-      _triggerCelebration();
-    }
-  }
-
-  // ---------- History ----------
+  // ---------- Step History ----------
   void _saveHistoryForStep(TasbeehSession session, TasbeehStep step) {
-    // Save history entry for this completed step
+    if (step.isCompleted) return;
     final historyEntry = HistoryEntry(
       id: '${session.id}_${step.id}_${DateTime.now().millisecondsSinceEpoch}',
       dhikrId: step.id,
       dhikrName: step.dhikrName,
-      arabicText: null, // could be fetched later
-      count: step.targetCount, // assume user completed full target
+      arabicText: null,
+      count: step.targetCount,
       targetCount: step.targetCount,
       isCompleted: true,
       startedAt: session.startedAt,
@@ -318,12 +308,21 @@ class TasbeehController extends GetxController {
     historyRepository.saveHistoryEntry(historyEntry);
   }
 
-  // ---------- Celebration ----------
-  void _triggerCelebration() {
-    showCelebration.value = true;
-    Future.delayed(const Duration(seconds: 3), () {
-      showCelebration.value = false;
-    });
+  // ---------- Custom Dhikr ----------
+  void addCustomDhikr(String name, int target) {
+    final session = currentSession.value;
+    if (session == null) return;
+    final newStep = TasbeehStep(
+      id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+      dhikrName: name,
+      targetCount: target,
+    );
+    final updatedSteps = List<TasbeehStep>.from(session.steps)..add(newStep);
+    final updatedSession = session.copyWith(steps: updatedSteps);
+    currentSession.value = updatedSession;
+    _updateUI(updatedSession);
+    _hasUnsavedChanges = true;
+    _saveCurrentSession();
   }
 
   // ---------- Persistence ----------
@@ -344,13 +343,6 @@ class TasbeehController extends GetxController {
   }
 
   // ---------- Settings Toggles ----------
-  void toggleVibration(bool value) {
-    vibrationEnabled.value = value;
-    // TODO: persist to SettingsService
-  }
-
-  void toggleSound(bool value) {
-    soundEnabled.value = value;
-    // TODO: persist to SettingsService
-  }
+  void toggleVibration(bool value) => vibrationEnabled.value = value;
+  void toggleSound(bool value) => soundEnabled.value = value;
 }

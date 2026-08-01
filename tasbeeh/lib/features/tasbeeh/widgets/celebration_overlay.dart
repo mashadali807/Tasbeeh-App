@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:lottie/lottie.dart';
 import '../controllers/tasbeeh_controller.dart';
 
 class CelebrationOverlay extends StatelessWidget {
@@ -11,73 +10,96 @@ class CelebrationOverlay extends StatelessWidget {
     final controller = Get.find<TasbeehController>();
     return Obx(() {
       if (!controller.showCelebration.value) return const SizedBox.shrink();
-      return GestureDetector(
-        onTap: () => controller.showCelebration.value = false,
+      return PopScope(
+        canPop: false,
         child: Container(
-          color: Colors.black.withOpacity(0.5),
+          color: Colors.black.withOpacity(0.6),
           child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Use a working animation or fallback
-                _buildCelebrationAnimation(),
-                const SizedBox(height: 16),
-                Text(
-                  '🌟 Goal Achieved! 🌟',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
-                  ),
+            child: Card(
+              elevation: 8,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              margin: const EdgeInsets.all(24),
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.emoji_events,
+                      size: 80,
+                      color: Colors.amber,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      '🎉 Goal Achieved! 🎉',
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Obx(
+                      () => Text(
+                        controller.allStepsCompleted.value
+                            ? 'All steps completed! Masha\'Allah!'
+                            : 'Step completed! Continue with the next one?',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Obx(
+                      () => Text(
+                        'Count: ${controller.count.value} / ${controller.targetCount.value}',
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: controller.saveAndFinish,
+                            icon: const Icon(Icons.save),
+                            label: const Text('Save & Finish'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: controller.discardAndCancel,
+                            icon: const Icon(Icons.delete_outline),
+                            label: const Text('Discard'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.red,
+                              side: const BorderSide(color: Colors.red),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Masha\'Allah! Keep going!',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Tap anywhere to dismiss',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[500],
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
       );
     });
-  }
-
-  Widget _buildCelebrationAnimation() {
-    try {
-      // Try to load from network first
-      return Lottie.network(
-        'https://assets10.lottiefiles.com/packages/lf20_j1adxtyb.json',
-        width: 200,
-        height: 200,
-        repeat: true,
-        errorBuilder: (context, error, stackTrace) {
-          // Fallback to icon if animation fails
-          return const Icon(
-            Icons.celebration,
-            size: 100,
-            color: Colors.amber,
-          );
-        },
-      );
-    } catch (e) {
-      // Fallback if anything fails
-      return const Icon(
-        Icons.celebration,
-        size: 100,
-        color: Colors.amber,
-      );
-    }
   }
 }

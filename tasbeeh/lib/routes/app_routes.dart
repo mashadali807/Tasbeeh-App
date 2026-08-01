@@ -11,4 +11,10 @@ abstract class Routes {
   static const customDhikr = '/custom-dhikr';
   static const customDhikrForm = '/custom-dhikr-form';
   static const history = '/history';
+  static const statistics = '/statistics';
+  static const prayerTimes = '/prayer-times';
+  static const dailyAdhkar = '/daily-adhkar';
+  static const dailyAdhkarDetail = '/daily-adhkar-detail';
+  static const reminders = '/reminders';
+  static const customReminder = '/custom-reminder';
 }

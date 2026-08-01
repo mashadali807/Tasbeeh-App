@@ -11,7 +11,6 @@ class HomeController extends GetxController {
   final AuthController authController = Get.find();
   final HomeRepository repository;
 
-  // Observables
   final Rx<DailyProgress?> dailyProgress = Rx<DailyProgress?>(null);
   final Rx<int> streak = 0.obs;
   final Rx<Quote?> dailyQuote = Rx<Quote?>(null);
@@ -31,30 +30,25 @@ class HomeController extends GetxController {
 
   void _setGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) {
+    if (hour < 12)
       greeting.value = 'Good Morning ☀️';
-    } else if (hour < 17) {
+    else if (hour < 17)
       greeting.value = 'Good Afternoon 🌤️';
-    } else {
+    else
       greeting.value = 'Good Evening 🌙';
-    }
   }
 
   void _setUserName() {
-    // Safe: if user is null, fallback to 'Muslim'
     userName.value = authController.state.user?.name ?? 'Muslim';
   }
 
   Future<void> loadDashboardData() async {
-    // Check if user is authenticated; if not, do nothing (should not happen)
     if (authController.state.user == null) {
       print('⚠️ User not authenticated, dashboard data cannot be loaded.');
       return;
     }
-
     isLoading.value = true;
     try {
-      // Load all data in parallel
       final results = await Future.wait([
         repository.getTodayProgress(),
         repository.getStreak(),
@@ -66,7 +60,6 @@ class HomeController extends GetxController {
     } catch (e, stack) {
       print('❌ Error loading dashboard: $e');
       print(stack);
-      // Set fallback values
       dailyProgress.value = DailyProgress(
         date: DateTime.now().toIso8601String().split('T').first,
         count: 0,
@@ -80,10 +73,13 @@ class HomeController extends GetxController {
     }
   }
 
-  // Resume last Tasbeeh session
   Future<void> resumeLastDhikr() async {
     try {
-      // Ensure TasbeehController is available
+      if (authController.state.user == null) {
+        print('⚠️ User not authenticated, cannot resume dhikr.');
+        Get.toNamed(Routes.dhikrLibrary);
+        return;
+      }
       final tasbeehController = Get.find<TasbeehController>();
       final activeSession = await tasbeehController.repository
           .getActiveSession();
@@ -99,17 +95,14 @@ class HomeController extends GetxController {
           Get.toNamed(Routes.tasbeeh, arguments: {'resume': true});
         }
       } else {
-        // No active session, go to library
         Get.toNamed(Routes.dhikrLibrary);
       }
     } catch (e) {
       print('❌ Error resuming dhikr: $e');
-      // Fallback: go to library
       Get.toNamed(Routes.dhikrLibrary);
     }
   }
 
   void logout() => authController.logout();
-
   void navigateTo(String route) => Get.toNamed(route);
 }

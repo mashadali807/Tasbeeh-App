@@ -11,8 +11,18 @@ import 'package:tasbeeh/features/history/bindings/history_binding.dart';
 import 'package:tasbeeh/features/history/screens/history_list_screen.dart';
 import 'package:tasbeeh/features/home/bindings/home_bindings.dart';
 import 'package:tasbeeh/features/home/screens/home_screen.dart';
+import 'package:tasbeeh/features/prayer_time/bindings/prayer_time_bindings.dart';
+import 'package:tasbeeh/features/prayer_time/screens/prayer_time_screen.dart';
+import 'package:tasbeeh/features/reminder/bindings/reminder_bindings.dart';
+import 'package:tasbeeh/features/reminder/screens/custom_reminder_screen.dart';
+import 'package:tasbeeh/features/reminder/screens/reminder_screen.dart';
+import 'package:tasbeeh/features/statistics/bindings/statistic_bindings.dart';
+import 'package:tasbeeh/features/statistics/screens/statistics_screen.dart';
 import 'package:tasbeeh/features/tasbeeh/bindings/tasbeeh_binding.dart';
 import 'package:tasbeeh/features/tasbeeh/screens/tasbeeh_counter_screen.dart';
+import '../features/daily_adhkar/bindings/daily_adhkar_binding.dart';
+import '../features/daily_adhkar/screens/daily_adhkar_detail_screen.dart';
+import '../features/daily_adhkar/screens/daily_adhkar_screeb.dart';
 import '../features/splash/screens/splash_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/register_screen.dart';
@@ -69,6 +79,34 @@ class AppPages {
       name: Routes.history,
       page: () => const HistoryListScreen(),
       binding: HistoryBinding(),
+    ),
+    GetPage(
+      name: Routes.statistics,
+      page: () => const StatisticsScreen(),
+      binding: StatisticsBinding(),
+    ),
+    GetPage(
+      name: Routes.prayerTimes,
+      page: () => const PrayerTimesScreen(),
+      binding: PrayerTimesBinding(),
+    ),
+    GetPage(
+      name: Routes.dailyAdhkar,
+      page: () => const DailyAdhkarScreen(),
+      binding: DailyAdhkarBinding(),
+    ),
+    GetPage(
+      name: Routes.dailyAdhkarDetail,
+      page: () => const DailyAdhkarDetailScreen(),
+    ),
+    GetPage(
+      name: Routes.reminders,
+      page: () => const RemindersScreen(),
+      binding: RemindersBinding(),
+    ),
+    GetPage(
+      name: Routes.customReminder,
+      page: () => const CustomReminderScreen(),
     ),
   ];
 }
